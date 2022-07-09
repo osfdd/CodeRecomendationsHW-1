@@ -7,47 +7,65 @@ public class Alarm : MonoBehaviour
 {
     private bool _isAlarmWorking = false;
     private bool _isOnTrigger = true;
+    private Coroutine _playAlarmSound;
+    private AudioSource _audioSource;
+    private WaitForSeconds sleepTime;
 
-    private void OnTriggerStay(Collider other)
+    private void Start()
     {
-        if (other.gameObject.tag == "Crook")
+        sleepTime = new WaitForSeconds(3f);
+        _playAlarmSound = null;
+        _audioSource = GetComponent<AudioSource>();
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.GetComponent<Crook>())
         {
             _isOnTrigger = true;
 
             if (_isAlarmWorking == false)
             {
-                _isAlarmWorking = true; StopAllCoroutines();
+                _isAlarmWorking = true;
 
-                var playAlarmSound = StartCoroutine(PlaySound());
+                if (_playAlarmSound != null)
+                    StopCoroutine(_playAlarmSound);
+
+                _playAlarmSound = StartCoroutine(PlaySound());
             }
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.gameObject.tag == "Crook")
+        if (other.gameObject.GetComponent<Crook>())
         {
             _isOnTrigger = false;
             _isAlarmWorking = false;
-            StopAllCoroutines();
-            var playAlarmSound = StartCoroutine(PlaySound());
+
+            if (_playAlarmSound != null)
+                StopCoroutine(_playAlarmSound);
+
+            _playAlarmSound = StartCoroutine(PlaySound());
         }
     }
 
     private IEnumerator PlaySound()
     {
-        var AudioSource = GetComponent<AudioSource>();
+        float volumeStep = 0.05f;
 
-        while (AudioSource.volume <= 1 && AudioSource.volume >= 0)
+        while (_audioSource.volume <= 1 && _audioSource.volume >= 0)
         {
-            AudioSource.Play();
+            _audioSource.Play();
 
-            if (_isOnTrigger == true)
-                AudioSource.volume += 0.05f;
+            if (_isOnTrigger == true && _audioSource.volume + volumeStep <= 1)
+                _audioSource.volume += volumeStep;
+            else if (_audioSource.volume - volumeStep >= 0)
+                _audioSource.volume -= volumeStep;
             else
-                AudioSource.volume -= 0.05f;
+                break;
 
-            yield return new WaitForSeconds(3f);
+            yield return sleepTime;
         }
     }
 }
