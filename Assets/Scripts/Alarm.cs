@@ -9,18 +9,18 @@ public class Alarm : MonoBehaviour
     private bool _isOnTrigger = true;
     private Coroutine _playAlarmSound;
     private AudioSource _audioSource;
-    private WaitForSeconds sleepTime;
+    private WaitForSeconds _sleepTime;
 
     private void Start()
     {
-        sleepTime = new WaitForSeconds(3f);
+        _sleepTime = new WaitForSeconds(3f);
         _playAlarmSound = null;
         _audioSource = GetComponent<AudioSource>();
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.GetComponent<Crook>())
+        if (other.gameObject.TryGetComponent(out Crook crook))
         {
             _isOnTrigger = true;
 
@@ -38,7 +38,7 @@ public class Alarm : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.gameObject.GetComponent<Crook>())
+        if (other.gameObject.TryGetComponent(out Crook crook))
         {
             _isOnTrigger = false;
             _isAlarmWorking = false;
@@ -58,14 +58,12 @@ public class Alarm : MonoBehaviour
         {
             _audioSource.Play();
 
-            if (_isOnTrigger == true && _audioSource.volume + volumeStep <= 1)
-                _audioSource.volume += volumeStep;
-            else if (_audioSource.volume - volumeStep >= 0)
-                _audioSource.volume -= volumeStep;
+            if (_isOnTrigger == true)
+                _audioSource.volume = Mathf.MoveTowards(_audioSource.volume,1f,volumeStep);
             else
-                break;
+                _audioSource.volume = Mathf.MoveTowards(_audioSource.volume, 0f, volumeStep);
 
-            yield return sleepTime;
+            yield return _sleepTime;
         }
     }
 }
